@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>AssetRails Console</title>
+		<meta charset="UTF-8" />
+		<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+		<script type="text/javascript">
+			var basement = {
+				uri: 'ws://127.0.0.1:4649/',
+				jenkinsTrigger: "",
+				init : function (e) {
+
+					// AssetRails's log
+					var currentUrl = document.URL;
+					var targetLogBaseUrl = currentUrl.replace(/\/[^\/]*$/, '/');
+					var targetLogUrl = targetLogBaseUrl + "temp/AssetRailsLog.txt";
+
+					var logUrlLink = document.getElementById('assetRailsLogPath');
+					logUrlLink.onclick = function() {
+						window.location.href = targetLogUrl;
+					}
+					logUrlLink.className = "btn btn-xs btn-info";
+
+					// in jenkins deployment or not.
+					// if (currentUrl.indexOf("/job/") != -1) {
+					// 	var re = new RegExp("(.*/job/.*?)/.*");
+					// 	var result = currentUrl.match(re);
+					// 	if (result) {
+					// 		basement.jenkinsTrigger = result[1] + "/build?delay=0sec";
+					// 		basement.replaceContents("runJenkins", "run jenkins job");
+							
+					// 		var runJenkinsJobObj = document.getElementById('runJenkins');
+
+					// 		runJenkinsJobObj.onclick = function() {
+					// 			var run = confirm('start jenkins job:' + basement.jenkinsTrigger);
+								
+					// 			if (!run) return;
+
+					// 			$.ajax(
+					// 				{
+					// 					url: basement.jenkinsTrigger,
+					// 					success: function(result){},
+					// 					error: function(result){
+					// 						alert('this html is not under control of jenkins.');
+					// 					}
+					// 				}
+					// 			);
+					// 		};
+
+					// 		runJenkinsJobObj.className = "btn btn-xs btn-info";
+					// 	}
+					// } else {
+					// 	basement.replaceContents("runJenkins", "cannot run jenkins job");
+					// 	var runJenkinsJobObj = document.getElementById('runJenkins');
+					// 	runJenkinsJobObj.className = "btn btn-xs btn-default";
+					// }
+
+					// Unity Editor's log R-EPLACABLE_UNITY_LOG_PATH
+					var logUrl = "REPLACABLE_UNITY_LOG_PATH";
+					var editorLogButonObl = document.getElementById('unityLogPath');
+						
+					if (currentUrl.indexOf("file:///") != -1) {// under file protocol.
+						editorLogButonObl.className = "btn btn-xs btn-info";
+						editorLogButonObl.onclick = function() {
+							window.location.href = logUrl;
+						}
+						
+					} else {
+						editorLogButonObl.className = "btn btn-xs btn-info";
+						editorLogButonObl.onclick = function() {
+							window.alert("Unity Editor log:\n" + "file://" + logUrl + "\n" + "please copy & paste to other tab for see it.");
+						}
+					}
+					
+
+
+					basement.reinit(e);
+				},
+				reinit : function (e) {
+					basement.socket = new WebSocket(basement.uri);
+					basement.socket.onopen = function (e) { basement.onOpen(e); };
+					basement.socket.onclose = function (e) { basement.onClose(e); };
+					basement.socket.onmessage = function (e) { basement.onMessage(e); };
+					basement.socket.onerror = function (e) { basement.onError(e); };
+				},
+
+				onOpen: function () {
+					basement.replaceContents("connectStatus", '<span class="glyphicon glyphicon-ok-sign">Connected</span>');
+				},
+
+				onClose: function () {
+					basement.replaceContents("connectStatus", '<span class="glyphicon glyphicon-refresh">Reconnecting..</span>');
+					
+					basement.socket.onopen = function () {};
+					basement.socket.onclose = function () {};
+					basement.socket.onmessage = function () {};
+					basement.socket.onerror = function () {};
+
+					// reconnection
+					setTimeout(basement.reinit, 1000);
+				},
+
+				onMessage: function (e) {
+					var message = e.data;
+					var index = message.indexOf(":");
+					
+					var status = statusAndMessage.substring(0, index);
+					var message = statusAndMessage.substring(index + 1);
+					
+					switch (status) {
+						case "Log": {
+							basement.insertContents("log", "<p style=' font-size:14px; color: #555; margin-bottom: 0px; white-space: pre; '>" + message + "</p>");
+							break;
+						}
+						case "Warning": {
+							basement.insertContents("log", "<p style=' font-size:14px; color: #c6851e; margin-bottom: 0px; white-space: pre; '>" + message + "</p>");
+							break;
+						}
+						case "Error": {
+							basement.insertContents("log", "<p style=' font-size:14px; color: #ff0505; margin-bottom: 0px; white-space: pre; '>" + message + "</p>");
+							break;
+						}
+						case "Exception": {
+							basement.insertContents("log", "<p style=' font-size:14px; color: #ff0505; margin-bottom: 0px; white-space: pre; '>" + message + "</p>");
+							break;
+						}
+						case "Assert": {
+							basement.insertContents("log", "<p style=' font-size:14px; color: #ff0505; margin-bottom: 0px; white-space: pre; '>" + message + "</p>");
+							break;
+						}
+						default: {
+							basement.insertContents("log", "<p style=' font-size:14px; color: #000; margin-bottom: 0px; white-space: pre; '>" + message + "</p>");
+							break;
+						}
+					}
+					
+				},
+
+				onError: function (e) {
+					basement.replaceContents("connectStatus", '<span class="glyphicon glyphicon-refresh">Reconnecting..</span>' + e.data);
+				},
+
+
+				//Methods
+				/*
+					write textlist
+				*/
+				appendContents: function (type, message) {
+					var childNodes = document.getElementById(type).childNodes;
+					var p = document.createElement('p');
+					p.style.wordWrap = 'break-word';
+					p.style.marginBottom = '5px';
+					p.innerHTML = message.toString();
+					document.getElementById(type).appendChild(p);
+				},
+
+				insertContents: function (type, message) {
+					var childNodes = document.getElementById(type).childNodes;
+					var p = document.createElement('p');
+					p.style.wordWrap = 'break-word';
+					p.style.marginBottom = '5px';
+					p.innerHTML = message.toString();
+					document.getElementById(type).insertBefore(p, childNodes[0]);
+				},
+
+				replaceContents: function (type, message) {
+					basement.clearContents(type);
+					var p = document.createElement('p');
+					p.style.wordWrap = 'break-word';
+					p.style.marginBottom = '0px';
+					p.innerHTML = message.toString();
+					var elem = document.getElementById(type);
+					if (elem) {
+						elem.appendChild(p);
+					}
+				},
+
+				clearContents: function (type) {
+					var elem = document.getElementById(type);
+					if (elem) {
+						while (elem.hasChildNodes()){
+							elem.removeChild(elem.lastChild);
+						}
+					}
+				},
+
+				setEmpty: function (type) {
+					basement.replaceContents(type, "no data.");
+					basement.replaceContents(type + "_button", "<button onclick=\"basement.showHide('" + type + "')\" type='button' class='btn btn-default'>" + type + "</button>");
+				},
+
+				container: function (contain) {
+					return "<div class='container'>" + contain + "</div>";
+				},
+
+				request: function (type) {
+					basement.socket.send(type);
+				},
+
+				showHide: function (type) {
+					if (document.getElementById(type).style.display === "none") {
+						document.getElementById(type).style.display = "block";
+						basement.replaceContents(type+"_showHide", '-');
+					} else {
+						document.getElementById(type).style.display = "none";
+						basement.replaceContents(type+"_showHide", '+');
+					}
+				},
+
+				progress: function (route, percentage) {
+					var e = document.getElementById(route + "_progress");
+					e.style.width = percentage + "%";
+					e.innerHTML = percentage + "%";
+
+					if (percentage === "100") {
+						var parent = e.parentNode;
+						if (parent) {
+							parent.className = "progress";
+							e.className = "progress-bar progress-bar-success";
+						}
+					} else if (percentage === "0") {
+						var parent = e.parentNode;
+						if (parent) {
+							parent.className = "progress progress-striped";
+							e.className = "progress-bar";
+						}
+					}
+				},
+
+				touch: function (url) {
+					console.log("url:" + url);
+				}
+			};
+
+			window.addEventListener('load', basement.init, false);
+
+		</script>
+	</head>
+
+	<body>
+		<div class="container" role="main">
+			<div class="page-header">logs</div>
+			<div class="jumbotron" style=" padding-top: 10px; padding-bottom: 10px; padding-left: 20px; padding-right: 20px; ">
+				
+				<p id="log"></p>
+			</div>
+		</div>
+	</body>
+</html>
