@@ -12,71 +12,6 @@
 				uri: 'ws://127.0.0.1:4649/',
 				jenkinsTrigger: "",
 				init : function (e) {
-
-					// AssetRails's log
-					var currentUrl = document.URL;
-					var targetLogBaseUrl = currentUrl.replace(/\/[^\/]*$/, '/');
-					var targetLogUrl = targetLogBaseUrl + "temp/AssetRailsLog.txt";
-
-					var logUrlLink = document.getElementById('assetRailsLogPath');
-					logUrlLink.onclick = function() {
-						window.location.href = targetLogUrl;
-					}
-					logUrlLink.className = "btn btn-xs btn-info";
-
-					// in jenkins deployment or not.
-					// if (currentUrl.indexOf("/job/") != -1) {
-					// 	var re = new RegExp("(.*/job/.*?)/.*");
-					// 	var result = currentUrl.match(re);
-					// 	if (result) {
-					// 		basement.jenkinsTrigger = result[1] + "/build?delay=0sec";
-					// 		basement.replaceContents("runJenkins", "run jenkins job");
-							
-					// 		var runJenkinsJobObj = document.getElementById('runJenkins');
-
-					// 		runJenkinsJobObj.onclick = function() {
-					// 			var run = confirm('start jenkins job:' + basement.jenkinsTrigger);
-								
-					// 			if (!run) return;
-
-					// 			$.ajax(
-					// 				{
-					// 					url: basement.jenkinsTrigger,
-					// 					success: function(result){},
-					// 					error: function(result){
-					// 						alert('this html is not under control of jenkins.');
-					// 					}
-					// 				}
-					// 			);
-					// 		};
-
-					// 		runJenkinsJobObj.className = "btn btn-xs btn-info";
-					// 	}
-					// } else {
-					// 	basement.replaceContents("runJenkins", "cannot run jenkins job");
-					// 	var runJenkinsJobObj = document.getElementById('runJenkins');
-					// 	runJenkinsJobObj.className = "btn btn-xs btn-default";
-					// }
-
-					// Unity Editor's log R-EPLACABLE_UNITY_LOG_PATH
-					var logUrl = "REPLACABLE_UNITY_LOG_PATH";
-					var editorLogButonObl = document.getElementById('unityLogPath');
-						
-					if (currentUrl.indexOf("file:///") != -1) {// under file protocol.
-						editorLogButonObl.className = "btn btn-xs btn-info";
-						editorLogButonObl.onclick = function() {
-							window.location.href = logUrl;
-						}
-						
-					} else {
-						editorLogButonObl.className = "btn btn-xs btn-info";
-						editorLogButonObl.onclick = function() {
-							window.alert("Unity Editor log:\n" + "file://" + logUrl + "\n" + "please copy & paste to other tab for see it.");
-						}
-					}
-					
-
-
 					basement.reinit(e);
 				},
 				reinit : function (e) {
@@ -104,11 +39,11 @@
 				},
 
 				onMessage: function (e) {
-					var message = e.data;
-					var index = message.indexOf(":");
+					var data = e.data;
+					var index = data.indexOf(":");
 					
-					var status = statusAndMessage.substring(0, index);
-					var message = statusAndMessage.substring(index + 1);
+					var status = data.substring(0, index);
+					var message = data.substring(index + 1);
 					
 					switch (status) {
 						case "Log": {
@@ -242,7 +177,7 @@
 
 	<body>
 		<div class="container" role="main">
-			<div class="page-header">logs</div>
+			<div class="page-header">Unity WebConsole</div>
 			<div class="jumbotron" style=" padding-top: 10px; padding-bottom: 10px; padding-left: 20px; padding-right: 20px; ">
 				
 				<p id="log"></p>
