@@ -6,7 +6,9 @@ show Unity Editor's console logs to browser.
 
 
 ##usage:
-copy Assets/WebConsole folder to your project. That's all.
+1. Copy Assets/WebConsole folder to your project. 
+2. Open Assets/WebConsole/console.html
+3. That's all.
 
 ##!caution!
 every logs will send to browser synchronously.
